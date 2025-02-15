@@ -68,9 +68,6 @@ function App() {
       <Row className="flex-grow-1">
         {sidebarOpen && (
           <Col md={3} className="vh-100 p-3 border-end d-flex flex-column animate__animated animate__fadeInLeft" style={{ backgroundColor: "#1A1A1A", color: "#FFFFFF", fontFamily: "Zen Dots, sans-serif", wordWrap: "break-word", position: "relative" }}>
-            <Button variant="link" onClick={() => setSidebarOpen(false)} style={{ position: "fixed", top: "20px", left: "20%", color: "#2BC6D1", zIndex: 1000 }}>
-              <ChevronLeft size={20} />
-            </Button>
             <h4 style={{ color: "#2BC6D1", fontFamily: "Zen Dots, sans-serif", fontWeight: 'Bold' }}><em>Notebook</em></h4>
             <hr style={{ borderColor: "#2BC6D1" }} />
             <Form.Group>
@@ -93,12 +90,6 @@ function App() {
               )) : <li style={{ color: "#888" }}>No documents uploaded</li>}
             </ul>
           </Col>
-        )}
-        
-        {!sidebarOpen && (
-          <Button variant="link" onClick={() => setSidebarOpen(true)} style={{ position: "fixed", top: "20px", left: "", color: "#2BC6D1", zIndex: 1000 }}>
-            <ChevronRight size={20} />
-          </Button>
         )}
 
         <Col md={sidebarOpen ? 9 : 12} className="p-4 d-flex flex-column h-100 animate__animated animate__fadeInRight" style={{ borderRadius: "0 20px 20px 0", position: "relative", width: sidebarOpen ? "75%" : "100%" }}>
