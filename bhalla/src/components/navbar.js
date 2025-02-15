@@ -57,16 +57,7 @@ const NavigationBar = ({ username }) => {
       <Navbar expand="lg" style={navbarStyle} className="sticky-top">
         <Container>
           <Navbar.Brand as={Link} to="/" style={brandStyle} className="d-flex align-items-left nav-icon">
-            {/* <img
-              src={require('../assets/file.png')} // Import the logo image
-              alt="Logo"
-              style={{
-                width: '40px',
-                height: '40px',
-                marginRight: '10px',
-              }}
-            /> */}
-            G
+            EVM
           </Navbar.Brand>
           <Navbar.Toggle aria-controls="basic-navbar-nav" style={{ borderColor: 'rgba(255, 255, 255, 0.42)' }}   />
           
@@ -78,13 +69,21 @@ const NavigationBar = ({ username }) => {
               <Nav.Link as={Link} to="/about" className="nav-link mx-3" style={iconStyle} title='About Us'>
                 <InfoCircle className="nav-icon" />
               </Nav.Link>
-              <Nav.Link as={Link} to="/games" className="nav-link mx-3" style={{ fontSize: '24px' }} title='Games'>
-              {/* 👾 */}
-              <Controller className="nav-icon" />
-              </Nav.Link>
-              <Nav.Link as={Link} to="/contact" className="nav-link mx-3" style={iconStyle} title='Contact Us'>
-                <Envelope className="nav-icon" />
-              </Nav.Link>
+                <Dropdown align="end" className="mx-3">
+                  <Dropdown.Toggle
+                    as={Nav.Link}
+                    className="d-flex align-items-center nav-link dropdown-toggle"
+                    style={{ padding: 0, color: 'white'}}
+                  >
+                    <PersonCircle className="nav-icon" />
+                  </Dropdown.Toggle>
+
+                  <Dropdown.Menu>
+                    <Dropdown.ItemText>{username}</Dropdown.ItemText>
+                    <Dropdown.Divider />
+                    <Dropdown.Item onClick={handleLogout}>Logout</Dropdown.Item>
+                  </Dropdown.Menu>
+                </Dropdown>
             </Nav>
           </Navbar.Collapse>
         </Container>
