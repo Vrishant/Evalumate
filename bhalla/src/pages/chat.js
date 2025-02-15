@@ -82,7 +82,7 @@ function App() {
                 disabled={isUploading}
                 style={{ backgroundColor: "#000000", color: "#FFFFFF", borderColor: "#2BC6D1", borderRadius: "10px" }} 
               />
-              {isUploading && <div className="mt-2" style={{ color: "#2BC6D1" }}>Uploading files...</div>}
+              {isUploading && <div className="mt-2" style={{ color: "##2BC6D1" }}>Uploading files...</div>}
               {uploadError && <Alert variant="danger" className="mt-2">{uploadError}</Alert>}
             </Form.Group>
             <ul className="mt-3" style={{ listStyle: "none", padding: 0 }}>
