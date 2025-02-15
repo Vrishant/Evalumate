@@ -57,16 +57,17 @@ const About = () => {
                 <h2 style={{ color: "#2BC6D1", fontSize: "2rem", fontWeight: "bold", marginTop: "2rem" }}>Key Features</h2>
                 <ul style={{ fontSize: "1.2rem", lineHeight: "1.8", listStyleType: 'none', paddingLeft: 0 }}>
                   <li style={{ marginBottom: '1rem' }}>
-                    <span style={{ color: "#2BC6D1", fontWeight: "bold" }}>• Intelligent Organization:</span> Automatically categorize and tag your notes for easy retrieval.
+                    <span style={{ color: "#2BC6D1", fontWeight: "bold" }}>• Smart Document Processing:</span> Understands and extracts insights from any uploaded document.
                   </li>
                   <li style={{ marginBottom: '1rem' }}>
-                    <span style={{ color: "#2BC6D1", fontWeight: "bold" }}>• Cross-Platform Sync:</span> Access your notes from any device, anywhere.
+                    <span style={{ color: "#2BC6D1", fontWeight: "bold" }}>• AI-Powered Summarization:</span> Generates concise yet meaningful summaries for quick comprehension.
                   </li>
                   <li style={{ marginBottom: '1rem' }}>
-                    <span style={{ color: "#2BC6D1", fontWeight: "bold" }}>• AI-Powered Search:</span> Find exactly what you need with natural language queries.
+                    <span style={{ color: "#2BC6D1", fontWeight: "bold" }}>• Context-Aware Q&A:</span> Answers questions strictly based on uploaded content, suggesting related concepts when needed.
+
                   </li>
                   <li style={{ marginBottom: '1rem' }}>
-                    <span style={{ color: "#2BC6D1", fontWeight: "bold" }}>• Collaborative Workspaces:</span> Share and collaborate on notes with your team.
+                    <span style={{ color: "#2BC6D1", fontWeight: "bold" }}>• Intelligent Evaluation:</span> Analyzes structured reports or answer sheets, highlighting key differences from ideal responses.
                   </li>
                 </ul>
 
