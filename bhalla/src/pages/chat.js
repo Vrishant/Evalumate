@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from "react";
 import "bootstrap/dist/css/bootstrap.min.css";
 import { Container, Row, Col, Form, InputGroup, Button, Alert } from "react-bootstrap";
-import { Send, ChevronLeft, ChevronRight } from "react-bootstrap-icons";
+import { Send } from "react-bootstrap-icons";
 import { motion } from "framer-motion";
 import Particles from "../components/particles";
 import GradientText from "../components/gradientText";
@@ -18,36 +18,79 @@ function Chat() {
   const chatRef = useRef(null);
 
   const validFileTypes = ['application/pdf', 'text/plain', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
-  const maxFileSize = 10 * 1024 * 1024; 
+  const maxFileSize = 10 * 1024 * 1024;
 
-  const handleFileUpload = (event) => {
+  const handleFileUpload = async (event) => {
     const uploadedFiles = Array.from(event.target.files);
     setUploadError(null);
     setIsUploading(true);
 
-    const invalidFiles = uploadedFiles.filter(file => {
-      return !validFileTypes.includes(file.type) || file.size > maxFileSize;
-    });
+    const validFiles = uploadedFiles.filter(file => 
+      validFileTypes.includes(file.type) && file.size <= maxFileSize
+    );
 
-    if (invalidFiles.length > 0) {
-      setUploadError(`Invalid files detected. Please upload only PDF, TXT, or DOC files under 10MB.`);
+    if (validFiles.length === 0) {
+      setUploadError("Invalid files detected. Please upload only PDF, TXT, or DOC files under 10MB.");
       setIsUploading(false);
       return;
     }
 
-    setTimeout(() => {
-      setFiles(prevFiles => [...prevFiles, ...uploadedFiles]);
+    const formData = new FormData();
+    validFiles.forEach(file => formData.append("files", file));
+
+    try {
+      const response = await fetch("http://127.0.0.1:8000/documents/uploads", {
+        method: "POST",
+        body: formData
+      });
+
+      if (!response.ok) throw new Error("Failed to upload files");
+      setFiles(prevFiles => [...prevFiles, ...validFiles]);
+    } catch (error) {
+      setUploadError("Error uploading files. Please try again.");
+    } finally {
       setIsUploading(false);
-    }, 1000);
+    }
   };
 
-  const handleSendMessage = () => {
+  const handleSendMessage = async () => {
     if (input.trim()) {
-      setMessages([...messages, { sender: "User", text: input, timestamp: new Date().toLocaleTimeString() }]);
+      const userMessage = { 
+        sender: "User", 
+        text: input, 
+        timestamp: new Date().toLocaleTimeString() 
+      };
+      setMessages(prev => [...prev, userMessage]);
       setInput("");
-      setTimeout(() => {
-        setMessages((prev) => [...prev, { sender: "Bot", text: "This is a bot response.", timestamp: new Date().toLocaleTimeString() }]);
-      }, 1000);
+      
+      try {
+        const response = await fetch("http://127.0.0.1:8000/documents/search", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ query: input })
+        });
+        
+        if (!response.ok) throw new Error("Failed to fetch response");
+        
+        const data = await response.json();
+        setMessages(prev => [
+          ...prev, 
+          { 
+            sender: "Bot", 
+            text: data.response, 
+            timestamp: new Date().toLocaleTimeString() 
+          }
+        ]);
+      } catch (error) {
+        setMessages(prev => [
+          ...prev, 
+          { 
+            sender: "Bot", 
+            text: "Error retrieving response. Please try again.", 
+            timestamp: new Date().toLocaleTimeString() 
+          }
+        ]);
+      }
     }
   };
 
@@ -65,12 +108,23 @@ function Chat() {
   }, [messages]);
 
   return (
-    <Container fluid className="min-vh-100 d-flex flex-column" style={{ backgroundColor: "#000000", color: "#FFFFFF", fontFamily: "Rasa, sans-serif" }}>
-       <div style={{ position: 'sticky', top: 0, zIndex: 100 }}>
+    <Container fluid className="min-vh-100 d-flex flex-column" style={{ 
+      backgroundColor: "#000000", 
+      color: "#FFFFFF", 
+      fontFamily: "Rasa, sans-serif" 
+    }}>
+      <div style={{ position: 'sticky', top: 0, zIndex: 100 }}>
         <Navbar username="JohnDoe" />
       </div>
       <Row className="flex-grow-1" style={{ position: 'relative' }}>
-        <div style={{ position: "absolute", top: 0, left: 0, width: "100%", height: "100%", zIndex: 0 }}>
+        <div style={{ 
+          position: "absolute", 
+          top: 0, 
+          left: 0, 
+          width: "100%", 
+          height: "100%", 
+          zIndex: 0 
+        }}>
           <Particles 
             particleCount={900}
             particleSpread={2}
@@ -87,7 +141,12 @@ function Chat() {
         </div>
 
         {sidebarOpen && (
-          <Col md={3} className="p-3 d-flex flex-column" style={{ backgroundColor: "rgba(26, 26, 26, 0.9)", backdropFilter: "blur(5px)", position: "relative", zIndex: 1 }}>
+          <Col md={3} className="p-3 d-flex flex-column" style={{ 
+            backgroundColor: "rgba(26, 26, 26, 0.9)", 
+            backdropFilter: "blur(5px)", 
+            position: "relative", 
+            zIndex: 1 
+          }}>
             <h4 style={{ color: "#2BC6D1", fontWeight: "bold" }}>
               <GradientText
                 colors={["#2BC6D1", "#2BC6D1", "#2BC6D1", "#28007B", "#2BC6D1"]}
@@ -105,7 +164,12 @@ function Chat() {
                 multiple 
                 onChange={handleFileUpload} 
                 disabled={isUploading}
-                style={{ backgroundColor: "#000000", color: "#FFFFFF", borderColor: "#2BC6D1", borderRadius: "10px" }} 
+                style={{ 
+                  backgroundColor: "#000000", 
+                  color: "#FFFFFF", 
+                  borderColor: "#2BC6D1", 
+                  borderRadius: "10px" 
+                }} 
               />
               {isUploading && <div className="mt-2" style={{ color: "#2BC6D1" }}>Uploading files...</div>}
               {uploadError && <Alert variant="danger" className="mt-2">{uploadError}</Alert>}
@@ -120,7 +184,10 @@ function Chat() {
           </Col>
         )}
 
-        <Col md={sidebarOpen ? 9 : 12} className="p-4 d-flex flex-column" style={{ position: "relative", zIndex: 1 }}>
+        <Col md={sidebarOpen ? 9 : 12} className="p-4 d-flex flex-column" style={{ 
+          position: "relative", 
+          zIndex: 1 
+        }}>
           <h3 style={{ color: "#2BC6D1", fontWeight: "bold" }}>
             <GradientText
               colors={["#2BC6D1", "#2BC6D1", "#2BC6D1", "#28007B", "#2BC6D1"]}
@@ -131,15 +198,12 @@ function Chat() {
             </GradientText>
           </h3>
           <div ref={chatRef} className="flex-grow-1 overflow-auto p-4 rounded" style={{ 
-              backgroundColor: "rgba(26, 26, 26, 0.9)", 
-              backdropFilter: "blur(5px)", 
-              borderRadius: "20px",
-              marginBottom: "20px",
-              minHeight: "70vh",  // Increase the chat area height
-              maxHeight: "80vh"   // Optional: Limit max height to prevent overflow
-            }}>
-
-
+            backgroundColor: "rgba(26, 26, 26, 0.9)", 
+            backdropFilter: "blur(5px)", 
+            borderRadius: "20px",
+            marginBottom: "20px",
+            minHeight: "70vh"
+          }}>
             {messages.map((msg, index) => (
               <motion.div 
                 key={index}
@@ -173,7 +237,11 @@ function Chat() {
               </motion.div>
             ))}
           </div>
-          <div className="p-3 rounded" style={{ backgroundColor: "rgba(26, 26, 26, 0.9)", backdropFilter: "blur(5px)", borderRadius: "20px" }}>
+          <div className="p-3 rounded" style={{ 
+            backgroundColor: "rgba(26, 26, 26, 0.9)", 
+            backdropFilter: "blur(5px)", 
+            borderRadius: "20px" 
+          }}>
             <InputGroup>
               <Form.Control
                 as="textarea"
@@ -182,9 +250,22 @@ function Chat() {
                 onChange={(e) => setInput(e.target.value)}
                 onKeyDown={handleKeyPress}
                 placeholder="Type a message..."
-                style={{ backgroundColor: "#000000", color: "#FFFFFF", borderColor: "#2BC6D1", borderRadius: "25px", fontSize: "16px", padding: "12px", resize: "none" }}
+                style={{ 
+                  backgroundColor: "#000000", 
+                  color: "#FFFFFF", 
+                  borderColor: "#2BC6D1", 
+                  borderRadius: "25px", 
+                  fontSize: "16px", 
+                  padding: "12px", 
+                  resize: "none" 
+                }}
               />
-              <Button style={{ backgroundColor: "#2BC6D1", color: "#000000", borderRadius: "15px", marginLeft: "3px" }} onClick={handleSendMessage}>
+              <Button style={{ 
+                backgroundColor: "#2BC6D1", 
+                color: "#000000", 
+                borderRadius: "15px", 
+                marginLeft: "3px" 
+              }} onClick={handleSendMessage}>
                 <Send size={20} />
               </Button>
             </InputGroup>

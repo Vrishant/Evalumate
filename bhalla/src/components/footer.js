@@ -16,8 +16,7 @@ const Footer = () => {
           <div className="col-md-4">
             <h5>About <span style={{ fontStyle: 'italic', fontWeight: 'bold', color: 'rgb(27, 166, 205)' }}>Evalumate</span></h5>
             <p>
-              <span style={{ fontStyle: 'italic', fontWeight: 'bold' }}>GCUBE</span> is your ultimate platform for game development and creativity.  
-              <strong> Get. Game. Going.</strong>
+              <span style={{ fontStyle: 'italic', fontWeight: 'bold' }}>Evalumate</span> is your ultimate platform for study development and creativity.  
             </p>
           </div>
 
