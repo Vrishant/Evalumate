@@ -3,3 +3,7 @@ uvicorn
 sqlalchemy<2.0.0
 passlib
 bcrypt
+pinecone-client
+python-dotenv
+langchain 
+numpy
