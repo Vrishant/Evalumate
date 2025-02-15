@@ -1,120 +1,131 @@
-import requests
-import fitz  # PyMuPDF for PDF extraction
+import nltk
+import pdfplumber
 import pytesseract
+import cv2
+import numpy as np
 from PIL import Image
-import io
-import re
+from nltk.tokenize import sent_tokenize, word_tokenize
+from nltk.corpus import stopwords
+from nltk.stem import WordNetLemmatizer
+from sentence_transformers import SentenceTransformer
 
-# OpenRouter API Key (Replace with your actual key)
-OPENROUTER_API_KEY = "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"
-OPENROUTER_API_URL = "https://openrouter.ai/api/v1/chat/completions"
+# Download necessary NLTK data
+nltk.download("punkt")
+nltk.download("stopwords")
+nltk.download("wordnet")
 
-# Function to make API requests to OpenRouter (Claude)
-def claude_api_request(prompt):
-    headers = {
-        "Authorization": f"Bearer {OPENROUTER_API_KEY}",
-        "Content-Type": "application/json"
-    }
-    data = {
-        "model": "anthropic.claude-2.1",
-        "messages": [{"role": "user", "content": prompt}],
-        "temperature": 0.2,
-        "max_tokens": 500
-    }
-    response = requests.post(OPENROUTER_API_URL, json=data, headers=headers)
-    return response.json()["choices"][0]["message"]["content"]
+# Load Sentence Transformer Model
+embedder = SentenceTransformer("all-MiniLM-L6-v2")
 
-# Function to extract text from PDFs
+# Initialize NLTK Components
+lemmatizer = WordNetLemmatizer()
+stop_words = set(stopwords.words("english"))
+
+def preprocess_text(text):
+    """ Tokenizes, removes stopwords, and lemmatizes text """
+    words = word_tokenize(text)
+    words = [lemmatizer.lemmatize(w.lower()) for w in words if w.isalnum() and w.lower() not in stop_words]
+    return " ".join(words)
+
 def extract_text_from_pdf(pdf_path):
-    doc = fitz.open(pdf_path)
-    text = " ".join([page.get_text("text") for page in doc])
-    return text
+    """ Extracts text from PDF files """
+    text = ""
+    with pdfplumber.open(pdf_path) as pdf:
+        for page in pdf.pages:
+            page_text = page.extract_text()
+            if page_text:
+                text += page_text + "\n"
+    return preprocess_text(text)
 
-# Function to extract text from images using OCR
-def extract_text_from_image(image_file):
-    image = Image.open(io.BytesIO(image_file))
+def extract_text_from_image(image_path):
+    """ Extracts text from images using OCR """
+    image = Image.open(image_path)
     text = pytesseract.image_to_string(image)
-    return text
+    return preprocess_text(text)
 
-# Function to summarize text using Claude API
-def generate_summary(text):
-    prompt = f"Summarize this document concisely:\n{text}"
-    return claude_api_request(prompt)
+def generate_embeddings(text_list):
+    """ Generate embeddings for a list of sentences """
+    return embedder.encode(text_list, convert_to_numpy=True)
 
-# Function to answer queries based on document content
-def answer_query(document_text, user_query):
-    prompt = f"Document: {document_text}\n\nQ: {user_query}\nA:"
-    return claude_api_request(prompt)
+def retrieve_relevant_sentences(query, text_sentences, text_embeddings, top_k=3):
+    """
+    Retrieve top-k most relevant sentences using cosine similarity.
+    """
+    query_embedding = embedder.encode([query], convert_to_numpy=True)
+    
+    # Compute cosine similarity
+    similarities = np.dot(text_embeddings, query_embedding.T).flatten()
+    
+    # Get top-k matches
+    top_indices = np.argsort(similarities)[-top_k:][::-1]
+    
+    return [text_sentences[i] for i in top_indices]
 
-# Function to extract questions from a question paper PDF
-def extract_questions_from_qp(qp_text):
-    question_patterns = [r"Q\d+\..*?", r"\d+\)..*?"]
-    questions = []
-    for pattern in question_patterns:
-        matches = re.findall(pattern, qp_text, re.DOTALL)
-        questions.extend(matches)
-    return questions
+def summarize_text(text, complexity="intermediate"):
+    """ Generates a summary with different complexity levels """
+    sentences = sent_tokenize(text)
+    
+    if complexity == "beginner":
+        summary = " ".join(sentences[:len(sentences)//4])  # Take the first 25%
+    elif complexity == "intermediate":
+        summary = " ".join(sentences[:len(sentences)//2])  # Take the first 50%
+    else:  # Expert
+        summary = " ".join(sentences)  # Full text with minimal trimming
 
-# Function to find answers in subject PDF
-def find_answers_from_subject_pdf(subject_text, questions):
+    return summary
+
+def extract_questions(qp_text):
+    """ Extracts questions from question paper text """
+    return [q.strip() for q in qp_text.split("\n") if q.strip().startswith("Q")]
+
+def find_answers(subject_text, questions):
+    """ Finds relevant answers in subject document (using in-memory retrieval) """
+    sentences = sent_tokenize(subject_text)
+    sentence_embeddings = generate_embeddings(sentences)
+
     answers = {}
     for question in questions:
-        prompt = f"Find the best answer for this question from the document:\n\nQuestion: {question}\nDocument: {subject_text}\n\nAnswer:"
-        answers[question] = claude_api_request(prompt)
+        retrieved_info = retrieve_relevant_sentences(question, sentences, sentence_embeddings)
+        answers[question] = " ".join(retrieved_info) if retrieved_info else "No relevant answer found"
+    
     return answers
 
-# Function to evaluate student answers
-def evaluate_answer(student_answer, ideal_answer):
-    prompt = f"""
-Evaluate the student's answer. Provide:
-1. A similarity score (0-100).
-2. Mistakes or missing points.
-3. Where marks were lost.
-
-Ideal Answer: {ideal_answer}
-Student Answer: {student_answer}
-
-Feedback:
-"""
-    return claude_api_request(prompt)
-
-# Main function to process QP, subject PDF, and compare with student responses
-def evaluate_student_responses(qp_pdf, subject_pdf, student_responses):
-    qp_text = extract_text_from_pdf(qp_pdf)
-    subject_text = extract_text_from_pdf(subject_pdf)
-    
-    questions = extract_questions_from_qp(qp_text)
-    extracted_answers = find_answers_from_subject_pdf(subject_text, questions)
-    
-    evaluation_results = {}
-    for question, student_answer in student_responses.items():
-        ideal_answer = extracted_answers.get(question, "No matching answer found")
+def evaluate_answers(student_answers, ideal_answers):
+    """ Evaluates student answers against ideal answers """
+    results = {}
+    for question, student_answer in student_answers.items():
+        ideal_answer = ideal_answers.get(question, "No matching answer found")
         if ideal_answer != "No matching answer found":
-            feedback = evaluate_answer(student_answer, ideal_answer)
-            evaluation_results[question] = {
+            similarity_score = len(set(student_answer.split()) & set(ideal_answer.split())) / len(set(ideal_answer.split())) * 100
+            results[question] = {
                 "student_answer": student_answer,
                 "ideal_answer": ideal_answer,
-                "feedback": feedback
+                "similarity_score": round(similarity_score, 2)
             }
         else:
-            evaluation_results[question] = {"error": "No matching answer found in subject PDF"}
+            results[question] = {"error": "No matching answer found in subject PDF"}
+    return results
 
-    return evaluation_results
-
-# Example Usage
+# Example Workflow
 if __name__ == "__main__":
-    test_pdf = "sample.pdf"
-    pdf_text = extract_text_from_pdf(test_pdf)
-    print("Summary:", generate_summary(pdf_text))
+    # Process PDFs
+    subject_pdf_text = extract_text_from_pdf("subject.pdf")
+    qp_pdf_text = extract_text_from_pdf("question_paper.pdf")
 
-    print("Q&A:", answer_query(pdf_text, "What is the main topic of the document?"))
+    # Summarization
+    summary = summarize_text(subject_pdf_text, "intermediate")
+    print("📌 Summary:", summary)
 
-    qp_pdf = "question_paper.pdf"
-    subject_pdf = "subject_content.pdf"
+    # Retrieve Answers
+    questions = extract_questions(qp_pdf_text)
+    ideal_answers = find_answers(subject_pdf_text, questions)
+
+    # Student Responses
     student_responses = {
-        "Q1. What is artificial intelligence?": "AI is when computers act like humans.",
-        "Q2. Define machine learning.": "ML is a part of AI that learns from data."
+        "Q1. What is AI?": "AI is when computers try to act like humans.",
+        "Q2. Define Machine Learning.": "ML is about computers learning patterns."
     }
 
-    results = evaluate_student_responses(qp_pdf, subject_pdf, student_responses)
-    print(results)
+    # Evaluate Student Answers
+    evaluation_results = evaluate_answers(student_responses, ideal_answers)
+    print("\n📌 Evaluation Results:", evaluation_results)

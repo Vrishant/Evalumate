@@ -1,9 +1,12 @@
-import requests
-import fitz  # PyMuPDF for PDF extraction
-import pytesseract
-from PIL import Image
+# Standard Library
 import io
 import re
+
+# Third-Party
+import fitz  # PyMuPDF for PDF extraction
+import pytesseract
+import requests
+from PIL import Image
 
 # Google Gemini API Key (Replace with actual key)
 GEMINI_API_KEY = "AIzaSyBBrbcoe-aytImlkNydv1BKGKV9-iJaqq4"

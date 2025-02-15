@@ -1,11 +1,14 @@
-import requests
-import fitz  # PyMuPDF for PDF extraction
-import pytesseract
-from PIL import Image
+# Standard Library
 import io
 import re
+
+# Third-Party
 import cv2
+import fitz  # PyMuPDF for PDF extraction
 import numpy as np
+import pytesseract
+import requests
+from PIL import Image
 from tensorflow.keras.applications.mobilenet_v2 import MobileNetV2, preprocess_input
 from tensorflow.keras.preprocessing import image
 
