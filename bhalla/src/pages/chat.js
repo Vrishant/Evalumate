@@ -4,7 +4,6 @@ import { Container, Row, Col, Form, InputGroup, Button, Alert } from "react-boot
 import { Send, ChevronLeft, ChevronRight } from "react-bootstrap-icons";
 import { motion } from "framer-motion";
 import Particles from "../components/particles.js";
-import GradientText from '../components/gradientText.js';
 
 function App() {
   const [files, setFiles] = useState([]);
@@ -164,14 +163,7 @@ function App() {
               </motion.div>
             ))}
           </div>
-          <div className="p-3 mt-3 animate__animated animate__fadeInUp" style={{ 
-            backgroundColor: "#1A1A1A", 
-            borderRadius: "20px", 
-            position: "relative", 
-            zIndex: 1,
-            width: "100%",
-            maxWidth: sidebarOpen ? "calc(100%)" : "100%"
-          }}>
+          <div className="p-3 mt-3 animate__animated animate__fadeInUp" style={{ backgroundColor: "#1A1A1A", borderRadius: "20px", position: "relative", zIndex: 1 }}>
             <InputGroup>
               <Form.Control
                 as="textarea"
@@ -182,16 +174,9 @@ function App() {
                 placeholder="Type a message..."
                 style={{ backgroundColor: "#000000", color: "#FFFFFF", borderColor: "#2BC6D1", borderRadius: "25px", fontFamily: "Oswald, sans-serif", fontSize: "16px", padding: "12px", resize: "none" }}
               />
-              <GradientText
-                colors={["#40ffaa", "#4079ff", "#40ffaa", "#4079ff", "#40ffaa"]}
-                animationSpeed={3}
-                showBorder={false}
-                className="custom-class"
-                onClick={handleSendMessage}
-              >
+              <Button style={{ backgroundColor: "#2BC6D1", color: "#000000", borderRadius: "15px", marginLeft: "3px" }} onClick={handleSendMessage}>
                 <Send size={20} />
-              </GradientText>
-
+              </Button>
             </InputGroup>
           </div>
         </Col>
